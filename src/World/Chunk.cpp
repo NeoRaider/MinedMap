@@ -1,5 +1,6 @@
 /*
   Copyright (c) 2015-2018, Matthias Schiffer <mschiffer@universe-factory.net>
+  Copyright (c) 2019, Roman Shishkin <spark@uwtech.org>
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -42,21 +43,25 @@ Chunk::Chunk(const ChunkData *data) {
 	if (!sectionsTag)
 		return;
 
-	biomeBytes = level->get<NBT::ByteArrayTag>("Biomes");
-	biomeInts = level->get<NBT::IntArrayTag>("Biomes");
-	assertValue(biomeBytes || biomeInts);
-
-	if (biomeBytes && biomeBytes->getLength() != SIZE*SIZE)
-		throw std::invalid_argument("corrupt biome data");
-	else if (biomeInts && biomeInts->getLength() != SIZE*SIZE)
-		throw std::invalid_argument("corrupt biome data");
-
 	for (auto &sTag : *sectionsTag) {
 		auto s = std::dynamic_pointer_cast<const NBT::CompoundTag>(sTag);
 		std::unique_ptr<Section> section = Section::makeSection(s);
-		size_t Y = section->getY();
-		sections.resize(Y);
-		sections.push_back(std::move(section));
+		if (section != nullptr) {
+            size_t Y = section->getY();
+            sections.resize(Y);
+            sections.push_back(std::move(section));
+		}
+	}
+
+	if (!sections.empty()) {
+		biomeBytes = level->get<NBT::ByteArrayTag>("Biomes");
+		biomeInts = level->get<NBT::IntArrayTag>("Biomes");
+		assertValue(biomeBytes || biomeInts);
+
+		if (biomeBytes && biomeBytes->getLength() != SIZE*SIZE)
+			throw std::invalid_argument("corrupt biome data");
+		else if (biomeInts && biomeInts->getLength() != SIZE*SIZE)
+			throw std::invalid_argument("corrupt biome data");
 	}
 }
 
